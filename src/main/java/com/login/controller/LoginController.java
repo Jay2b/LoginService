@@ -1,6 +1,7 @@
 package com.login.controller;
 
 import com.login.model.User;
+import com.login.model.UserInfo;
 import com.login.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -31,13 +32,15 @@ public class LoginController {
     public ModelAndView registration(){
         ModelAndView modelAndView = new ModelAndView();
         User user = new User();
+        UserInfo userInfo = new UserInfo();
+        modelAndView.addObject("userInfo", userInfo);
         modelAndView.addObject("user", user);
         modelAndView.setViewName("registration");
         return modelAndView;
     }
 
     @PostMapping(value = "/registration")
-    public ModelAndView createNewUser(@Valid User user, BindingResult bindingResult) {
+    public ModelAndView createNewUser(@Valid User user, @Valid UserInfo userInfo, BindingResult bindingResult, BindingResult bindingResultUserInfo) {
         ModelAndView modelAndView = new ModelAndView();
         User userExists = userService.findUserByUserName(user.getUserName());
         if (userExists != null) {
@@ -45,17 +48,20 @@ public class LoginController {
                     .rejectValue("userName", "error.user",
                             "There is already a user registered with the user name provided");
         }
-        if (bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors() || bindingResultUserInfo.hasErrors()) {
             modelAndView.setViewName("registration");
         } else {
             userService.saveUser(user);
+            userService.saveUserInfo(userInfo);
             modelAndView.addObject("successMessage", "User has been registered successfully");
             modelAndView.addObject("user", new User());
+            modelAndView.addObject("userInfo", new UserInfo());
             modelAndView.setViewName("registration");
-
         }
         return modelAndView;
     }
+
+
 
     @GetMapping(value="/admin/home")
     public ModelAndView home(){
@@ -68,5 +74,13 @@ public class LoginController {
         return modelAndView;
     }
 
+        @GetMapping(value="/showAllUsers")
+        public ModelAndView showAllUsers(){
+            ModelAndView modelAndView = new ModelAndView();
+            modelAndView.addObject("users", userService.listAll());
+            modelAndView.addObject("usersInfo", userService.listAllInfo());
+            modelAndView.setViewName("showAllUsers");
+            return modelAndView;
+        }
 
-}
+    }
